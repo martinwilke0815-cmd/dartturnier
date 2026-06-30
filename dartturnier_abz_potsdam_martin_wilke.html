@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="de"><head><meta charset="UTF-8">
+<title>DARTTURNIER ABZ POTSDAM</title>
+<style>
+body{margin:0;font-family:Arial,sans-serif;color:#fff;
+background:#050505;
+background-image:radial-gradient(circle at center,#1a1a1a 0,#000 70%);
+}
+.header{padding:20px;text-align:center;border-bottom:2px solid #900;background:#000}
+.header h1{margin:0;font-size:56px;letter-spacing:3px;color:#ddd;text-transform:uppercase}
+.nav{display:flex;justify-content:center;gap:10px;background:#111;padding:10px}
+.nav div{padding:12px 22px;background:#1a1a1a;border:1px solid #444;border-radius:8px}
+.container{display:grid;grid-template-columns:280px 1fr;gap:15px;padding:15px}
+.panel{background:rgba(10,10,10,.92);border:1px solid #333;border-radius:12px;padding:15px;box-shadow:0 0 12px #000}
+h2{color:#f33;margin-top:0}
+input,button,select{width:100%;padding:10px;margin:5px 0;border-radius:6px;border:1px solid #444;background:#111;color:#fff}
+button{background:linear-gradient(#b30000,#700);cursor:pointer}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.bracket{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.match{padding:8px;border:1px solid #0a0;margin:8px 0}
+.dev{position:fixed;bottom:8px;right:15px;color:#aaa}
+</style></head>
+<body>
+<div class="header"><h1>🎯 DARTTURNIER ABZ POTSDAM 🎯</h1></div>
+<div class="nav"><div>Übersicht</div><div>Gruppenphase</div><div>K.O.-Phase</div><div>Turnierbaum</div><div>Statistik</div></div>
+
+<div class="container">
+<div>
+<div class="panel">
+<h2>1. Spieler eingeben</h2>
+<div id="players"></div>
+<button onclick="drawGroups()">Zufällig auslosen</button>
+</div>
+
+<div class="panel">
+<h2>Turnier Info</h2>
+<p>Modus: Double Elimination</p>
+<p>2 Gruppen à 4 Spieler</p>
+<p>Jeder gegen Jeden</p>
+<p>Alle Spieler erreichen die K.O.-Phase</p>
+</div>
+</div>
+
+<div>
+<div id="groups" class="panel"><h2>2. Auslosung & Gruppenspiele</h2></div>
+<div id="ko" class="panel"><h2>3. Turnierbaum</h2>Warte auf Gruppenphase…</div>
+</div>
+</div>
+
+<div class="dev">Entwickler: Martin Wilke</div>
+
+<script>
+for(let i=1;i<=8;i++){let e=document.createElement('input');e.placeholder='Spieler '+i;players.appendChild(e);}
+let A=[],B=[],rA=[],rB=[],rankA=[],rankB;
+function sh(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}
+function drawGroups(){
+ let n=[...document.querySelectorAll('#players input')].map(x=>x.value.trim()).filter(Boolean);
+ if(n.length!=8){alert("Bitte 8 Spieler eingeben.");return;}
+ sh(n); A=n.slice(0,4); B=n.slice(4);
+ renderGroups();
+}
+function matches(g){let m=[];for(let i=0;i<4;i++)for(let j=i+1;j<4;j++)m.push([g[i],g[j]]);return m;}
+function renderGroups(){
+ let html='<div class="grid2">';
+ html+=groupBox("A",A,"A")+groupBox("B",B,"B");
+ html+='</div><button onclick="finish()">K.O.-Phase starten</button>';
+ groups.innerHTML=html;
+}
+function groupBox(n,g,id){
+ let h='<div><h3>Gruppe '+n+'</h3>';
+ matches(g).forEach((m,i)=>{
+ h+=`<div class="match">${m[0]} vs ${m[1]}
+ <select onchange="save('${id}',${i},this.value)">
+ <option value=''>Gewinner</option><option>${m[0]}</option><option>${m[1]}</option></select></div>`;
+ });
+ h+='<div id="t'+id+'"></div></div>'; return h;
+}
+function save(id,i,w){(id=="A"?rA:rB)[i]=w; update(id);}
+function update(id){
+ let g=id=="A"?A:B, r=id=="A"?rA:rB, wins={}; g.forEach(x=>wins[x]=0); r.forEach(x=>x&&(wins[x]++));
+ let rank=Object.entries(wins).sort((a,b)=>b[1]-a[1]); if(id=="A") rankA=rank; else rankB=rank;
+ document.getElementById("t"+id).innerHTML='<table border=1><tr><th>Platz</th><th>Spieler</th><th>Siege</th></tr>'+
+ rank.map((x,i)=>`<tr><td>${i+1}</td><td>${x[0]}</td><td>${x[1]}</td></tr>`).join('')+'</table>';
+}
+function finish(){
+ if(rankA.length<4||rankB.length<4){alert("Bitte erst Ergebnisse eintragen.");return;}
+ let games=[[rankA[0][0],rankB[3][0]],[rankA[1][0],rankB[2][0]],[rankB[0][0],rankA[3][0]],[rankB[1][0],rankA[2][0]]];
+ ko.innerHTML='<h2>4. K.O.-Phase (Double Elimination)</h2><div class="bracket"><div><h3>Winners Bracket</h3>'+
+ games.map(g=>`<div class="match">${g[0]} vs ${g[1]}</div>`).join('')+
+ '</div><div><h3>Losers Bracket</h3><p>Verlierer werden automatisch in zukünftigen Versionen verschoben.</p></div></div>';
+}
+</script></body></html>
